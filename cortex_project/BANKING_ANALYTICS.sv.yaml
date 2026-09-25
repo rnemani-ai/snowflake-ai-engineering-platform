@@ -1,0 +1,189 @@
+name: BANKING_ANALYTICS
+description: Semantic layer for banking analytics and Cortex Analyst
+tables:
+  - name: ACCOUNTS
+    base_table:
+      database: BANKING_DQ_DB
+      schema: RAW
+      table: ACCOUNTS
+    primary_key:
+      columns:
+        - ACCOUNT_ID
+    dimensions:
+      - name: ACCOUNT_STATUS
+        description: Current account status
+        expr: accounts.ACCOUNT_STATUS
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+      - name: ACCOUNT_TYPE
+        description: Type of bank account
+        expr: accounts.ACCOUNT_TYPE
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+    facts:
+      - name: BALANCE
+        description: Current account balance
+        expr: accounts.BALANCE
+        data_type: "NUMBER(18,2)"
+        access_modifier: public_access
+    metrics:
+      - name: ACCOUNT_COUNT
+        description: Number of accounts
+        expr: COUNT(accounts.ACCOUNT_ID)
+        access_modifier: public_access
+      - name: AVERAGE_BALANCE
+        description: Average account balance
+        expr: AVG(accounts.BALANCE)
+        access_modifier: public_access
+      - name: TOTAL_BALANCE
+        description: Total balance across accounts
+        expr: SUM(accounts.BALANCE)
+        access_modifier: public_access
+  - name: BRANCHES
+    base_table:
+      database: BANKING_DQ_DB
+      schema: RAW
+      table: BRANCHES
+    primary_key:
+      columns:
+        - BRANCH_ID
+    dimensions:
+      - name: BRANCH_CITY
+        description: Branch city
+        expr: branches.CITY
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+      - name: BRANCH_NAME
+        description: Bank branch name
+        expr: branches.BRANCH_NAME
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+  - name: CUSTOMERS
+    base_table:
+      database: BANKING_DQ_DB
+      schema: RAW
+      table: CUSTOMERS
+    primary_key:
+      columns:
+        - CUSTOMER_ID
+    dimensions:
+      - name: CITY
+        description: Customer city
+        expr: customers.CITY
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+      - name: CUSTOMER_NAME
+        description: Full customer name
+        expr: customers.FIRST_NAME || ' ' || customers.LAST_NAME
+        data_type: VARCHAR(33554433)
+        access_modifier: public_access
+      - name: STATE
+        description: Customer state
+        expr: customers.STATE
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+  - name: LOAN_APPLICATIONS
+    base_table:
+      database: BANKING_DQ_DB
+      schema: RAW
+      table: LOAN_APPLICATIONS
+    primary_key:
+      columns:
+        - APPLICATION_ID
+    dimensions:
+      - name: APPLICATION_STATUS
+        description: Loan application status
+        expr: loan_applications.APPLICATION_STATUS
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+      - name: LOAN_TYPE
+        description: Type of loan
+        expr: loan_applications.LOAN_TYPE
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+    facts:
+      - name: LOAN_AMOUNT
+        description: Requested loan amount
+        expr: loan_applications.LOAN_AMOUNT
+        data_type: "NUMBER(18,2)"
+        access_modifier: public_access
+    metrics:
+      - name: LOAN_APPLICATION_COUNT
+        description: Number of loan applications
+        expr: COUNT(loan_applications.APPLICATION_ID)
+        access_modifier: public_access
+      - name: TOTAL_LOAN_AMOUNT
+        description: Total requested loan amount
+        expr: SUM(loan_applications.LOAN_AMOUNT)
+        access_modifier: public_access
+  - name: TRANSACTIONS
+    base_table:
+      database: BANKING_DQ_DB
+      schema: RAW
+      table: TRANSACTIONS
+    primary_key:
+      columns:
+        - TRANSACTION_ID
+    dimensions:
+      - name: TRANSACTION_STATUS
+        description: Transaction status
+        expr: transactions.TRANSACTION_STATUS
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+      - name: TRANSACTION_TYPE
+        description: Type of transaction
+        expr: transactions.TRANSACTION_TYPE
+        data_type: VARCHAR(16777216)
+        access_modifier: public_access
+    facts:
+      - name: AMOUNT
+        description: Transaction amount
+        expr: transactions.AMOUNT
+        data_type: "NUMBER(18,2)"
+        access_modifier: public_access
+    metrics:
+      - name: TOTAL_TRANSACTION_AMOUNT
+        description: Total transaction amount
+        expr: SUM(transactions.AMOUNT)
+        access_modifier: public_access
+      - name: TRANSACTION_COUNT
+        description: Number of transactions
+        expr: COUNT(transactions.TRANSACTION_ID)
+        access_modifier: public_access
+relationships:
+  - name: ACCOUNTS_TO_BRANCHES
+    left_table: ACCOUNTS
+    right_table: BRANCHES
+    relationship_columns:
+      - left_column: BRANCH_ID
+        right_column: BRANCH_ID
+  - name: ACCOUNTS_TO_CUSTOMERS
+    left_table: ACCOUNTS
+    right_table: CUSTOMERS
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+  - name: LOANS_TO_CUSTOMERS
+    left_table: LOAN_APPLICATIONS
+    right_table: CUSTOMERS
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+  - name: TRANSACTIONS_TO_ACCOUNTS
+    left_table: TRANSACTIONS
+    right_table: ACCOUNTS
+    relationship_columns:
+      - left_column: ACCOUNT_ID
+        right_column: ACCOUNT_ID
+verified_queries:
+  - name: ACCOUNTS_BY_TYPE
+    sql: |-
+      SELECT
+                       ACCOUNT_TYPE,
+                       AGG(TOTAL_BALANCE) AS TOTAL_BALANCE,
+                       AGG(ACCOUNT_COUNT) AS ACCOUNT_COUNT
+                   FROM BANKING_DQ_DB.ANALYTICS.BANKING_ANALYTICS
+                   GROUP BY ACCOUNT_TYPE
+                   ORDER BY ACCOUNT_TYPE
+    question: What is the total balance and number of accounts by account type?
+    use_as_onboarding_question: true

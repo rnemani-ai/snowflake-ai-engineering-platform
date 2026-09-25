@@ -1,0 +1,7 @@
+version: 1
+artifacts:
+  - path: BANKING_ANALYTICS.sv.yaml
+    type: semantic_view
+    targets:
+      default:
+        object: BANKING_DQ_DB.ANALYTICS.BANKING_ANALYTICS
