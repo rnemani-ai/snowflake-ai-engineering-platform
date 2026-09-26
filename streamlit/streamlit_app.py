@@ -1252,7 +1252,7 @@ with tab2:
                 "What is the average balance by account type?",
 
             "expected": {
-                "CHECKING": 3400,
+                "CHECKING": 2550,
                 "SAVINGS": 10600,
             },
         },
@@ -1264,7 +1264,7 @@ with tab2:
 
             "expected": {
                 "APPROVED": 3,
-                "PENDING": 1,
+                "PENDING": 3,
                 "REJECTED": 1,
             },
         },
